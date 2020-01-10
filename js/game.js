@@ -1,10 +1,9 @@
-
 class Game extends Phaser.Scene{
     constructor()
     {
         super({key: "Game"});
     }
-
+    
     preload()
     {
         
@@ -12,6 +11,8 @@ class Game extends Phaser.Scene{
 
     create()
     {
+        this.score = 0;
+        this.scoreTxt = this.add.text(10, 10, `Score: ${this.score}`);
         this.add.text(50, 50, "Game");
         this.display_typing = this.add.text(this.game.renderer.width / 2, 30, "", {font: "40px Impact"}).setOrigin(0.5);
 
@@ -61,7 +62,8 @@ class Game extends Phaser.Scene{
         const layer = inner_map.createStaticLayer(0, tiles, 16, 2*16);
         */
 
-        this.floor = this.add.image(this.game.renderer.width / 2, this.game.renderer.height / 2, "floor")
+        this.floor = this.add.image(0, this.game.renderer.height, "floor");
+        this.floor.setOrigin(0, 1);
 
         this.player = this.physics.add.sprite(20, this.game.renderer.height / 2, "slime_run");
         this.player.setScale(2);
@@ -83,42 +85,58 @@ class Game extends Phaser.Scene{
         this.cursorKeys = this.input.keyboard.createCursorKeys();
         this.keyboard = this.input.keyboard.addKeys("A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,Backspace");
 
-        this.input.keyboard.on("keydown", event => {
-            if (event.keyCode > 36 && event.keyCode < 41) //ignore arrow keys ` 
-                return;
-            console.log(event);
-            let key = event.key;
-            if (key == "Backspace" && this.currentWord.length > 0)
-            {
-                this.currentWord = this.currentWord.slice(0, -1);
-            }
-            else if (key != "Backspace")
-            {
-                this.currentWord += key;
-            }
-            this.display_typing.text = this.currentWord;
-            if (this.used_words.indexOf(this.currentWord) != -1) //word has been typed
-            {
-                this.enemyKilled();
-            }
-            
-        });
+        this.input.keyboard.on("keydown", event => this.keyTyped(event));
         
+    }
+
+    keyTyped(event)
+    {
+        //list of keys that need to be ignored
+        let keysToIgnore = ["Shift", "Control", "Alt", "AltGraph", "Unidentified", "Escape", "OS", "Enter"];
+        if (event.keyCode > 36 && event.keyCode < 41) //ignore arrow keys
+            return;
+        if (keysToIgnore.findIndex((key, i) => key == event.key) != -1) 
+            return;
+        console.log(event);
+        let key = event.key;
+        if (key == "Backspace" && this.currentWord.length > 0)
+        {
+            this.currentWord = this.currentWord.slice(0, -1);
+        }
+        else if (key != "Backspace")
+        {
+            this.currentWord += key;
+        }
+        this.display_typing.text = this.currentWord;
+        if (this.used_words.indexOf(this.currentWord) != -1) //word has been typed
+        {
+            this.enemyKilled();
+        }
     }
 
     enemyKilled()
     {
         console.log("killed");
+        //Clear the typed word
+        this.currentWord = ""; 
+        this.display_typing.text = this.currentWord;
+
+        //Play a sound
+
+        //increase the score and update the display
+        this.score += 100;
+        this.scoreTxt.setText(`Score: ${this.score}`);
+
     }
 
     makeEnemy()
     {
-        let goblin = this.add.sprite(0,0,"goblin_idle").setScale(2);
         let word = this.selectWord();
+        let goblin = new Enemy(this, 0, 0, "goblin_idle", 0, word).setScale(3);//this.add.sprite(0,0,"goblin_idle").setScale(2);
         this.used_words.push(word);
-        let enemy_txt = this.add.text(0,-10,word).setOrigin(0.5);
+        let enemy_txt = this.add.text(0,-15,word).setOrigin(0.5);
         this.enemy = this.add.container(200,200, [goblin, enemy_txt]);
-        this.enemy.setSize(16,20);
+        this.enemy.setSize(20,25);
         this.physics.world.enableBody(this.enemy);
 
         this.physics.world.addCollider(this.player, this.enemy, (player, enemy) => {
@@ -139,6 +157,7 @@ class Game extends Phaser.Scene{
     update()
     {
         // this.physics.accelerateToObject(this.enemy, this.player);
+        this.physics.moveToObject(this.enemy, this.player, 30);
 
         let right = this.cursorKeys.right.isDown;
         let left = this.cursorKeys.left.isDown;
@@ -157,8 +176,14 @@ class Game extends Phaser.Scene{
         if (up)
         {
             console.log(this.game.renderer.height / 2 - this.floor.height);
-            if (this.player.y > this.game.renderer.height / 2 - this.floor.height)
+            if (this.player.y > this.game.renderer.height - this.floor.height)
+            {
                 this.player.setVelocityY(-64);
+            }
+            else 
+            {
+                this.player.setVelocityY(0);
+            }
         }
         if (down)
         {
@@ -172,15 +197,5 @@ class Game extends Phaser.Scene{
         {
             this.player.setVelocityY(0);
         }
-
-        // if (this.keyboard.D.isDown === true) {
-        //     console.log("right");
-        //     this.player.setVelocityX(128);
-
-        // }
-        // if (this.key_A.isDown)
-        // {
-        //     console.log("adidjapsij");
-        // }
     }
 }
