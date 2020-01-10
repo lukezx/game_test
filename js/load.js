@@ -46,8 +46,8 @@ class Load extends Phaser.Scene{
 
         //ui
         this.load.image("menu_btn", "/assets/v1.1 dungeon crawler 16x16 pixel pack/ui (new)/menu_button.png");
-        this.load.image("sound_playing", "/assets/ui/sound_playing.png");
-        this.load.image("sound_mute", "/assets/ui/sound_mute.png");
+        this.load.image("sound_playing", "../assets/ui/sound_playing.png");
+        this.load.image("sound_mute", "../assets/ui/sound_mute.png");
 
         //words
         this.load.text("dict", "/assets/words/words_alpha.txt");
